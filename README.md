@@ -11,9 +11,14 @@ GorillaCleaner is a bot that protects servers from people that engage in gorilla
 ## Installation
 
 1. Clone the repository
-2. Install dependencies: ```npm install```
-3. Configure your bot token in ```.env```
-4. Run: ```npm start``` OR ```pm2 start ecosystem-config.js```
+2. Install dependencies: 
+```npm install```
+3. Configure your bot token in 
+```.env```
+4. Run: 
+```npm start``` 
+OR 
+```pm2 start ecosystem-config.js```
 
 ## Usage
 
