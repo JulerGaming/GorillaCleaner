@@ -3,3 +3,7 @@ node_modules/
 
 # Environment variables
 .env
+
+# Scripts
+pull.bat
+push.bat
