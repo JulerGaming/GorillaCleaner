@@ -356,7 +356,7 @@ client.on('interactionCreate', async interaction => {
             } // outer try-catch
         }
         if (interaction.commandName === 'add-flagged') {
-            if (interaction.member.user.id !== '804839205309382676') return interaction.reply('You do not have permission to use this command.');
+            if (interaction.user.id !== '804839205309382676') return interaction.reply('You do not have permission to use this command.');
             const userIdToAdd = interaction.options.getUser('user_id');
             if (config.flagged_user_ids.includes(userIdToAdd.id)) {
                 return interaction.reply({ content: `${userIdToAdd.displayName} is already flagged.`, InteractionReplyOptions: { ephemeral: true } });
@@ -441,7 +441,13 @@ client.on('interactionCreate', async interaction => {
             await guild.leave();
             return interaction.followUp({ content: `Left the server: ${guild.name}`, ephemeral: true });
         }
-    } catch (error) { console.error('Error handling interaction:', error); }
+    } catch (error) { 
+        console.error('Error handling interaction:', error); 
+        if (interaction.deferred || interaction.replied) {
+            return interaction.followUp({ content: 'An error occurred while processing the command.', ephemeral: true });
+        }
+        return interaction.reply({ content: 'An error occurred while processing the command.', ephemeral: true });
+    }
 });
 
 // /--- COMMANDS CMDS ---
