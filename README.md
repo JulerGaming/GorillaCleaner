@@ -42,4 +42,4 @@ For issues and questions, please open an issue on GitHub.
 - Maintains a database of known violation servers
 - Supports PM2 for production deployment
 
-*Also: Please DO NOT harass/send death threats to cheaters. That's too far. They know they made a mistake.*
+*Also: Please DO NOT harass/send death threats to cheaters OR gt copy users. That's too far. They know they made a mistake.*
