@@ -41,3 +41,5 @@ For issues and questions, please open an issue on GitHub.
 - Removes members detected in gorilla tag copy servers
 - Maintains a database of known violation servers
 - Supports PM2 for production deployment
+
+*Also: Please DO NOT harass/send death threats to cheaters. That's too far. They know they made a mistake.*
