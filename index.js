@@ -42,9 +42,15 @@ const client = new Client({
     partials: [Partials.GuildMember],
 });
 
+async function shutdown() {
+    await client.Destroy();
+}
+
+process.on('SIGINT', shutdown)
+
 const configJson = fs.readFileSync("./config.json", "utf-8");
 const cff = JSON.parse(configJson);
-const { exec }  = require("child_process");
+const { exec } = require("child_process");
 
 function run(cmd) {
     return new Promise((resolve, reject) => {
@@ -68,6 +74,7 @@ async function syncRepo() {
         if (local !== remote) {
             console.log("Remote updates found. Pulling...");
             await run("git pull");
+            process.exit(0);
         } else {
             console.log("Repo already up to date.");
         }
@@ -100,24 +107,14 @@ setInterval(syncRepo, 1 * 60 * 1000); // every 1 minute
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     const guilds = client.guilds.cache;
-    const languageStatuses = [
-        { name: `🔨 Banning ${config.flagged_user_ids.length} people from ${guilds.size} servers`, type: 4 },
-        { name: `🔨 Baneando a ${config.flagged_user_ids.length} personas de ${guilds.size} servidores`, type: 4 },
-        { name: `🔨 Bannissement de ${config.flagged_user_ids.length} personnes de ${guilds.size} serveurs`, type: 4 }
-    ] // statuses for languages (english, spanish, french and so on)
-    let i = 0;
-    setInterval(() => {
-        const current = languageStatuses[i % languageStatuses.length];
-
-        client.user.setPresence({
-            activities: [{
-                name: current.name,
-                type: current.type ?? ActivityType.Playing
-            }],
-            status: 'online'
-        })
-        i++;
-    }, 10_000); // every 10 seconds
+    const status = { name: `🔨 Banning ${config.flagged_user_ids.length} people from ${guilds.size} servers`, type: 4, visibility: 'online' };
+    client.user.setPresence({
+        activities: [{
+            name: status.name,
+            type: status.type ?? ActivityType.Playing
+        }],
+        status: status.visibility
+    })
 });
 
 client.on('ready', () => {
@@ -496,8 +493,8 @@ client.on('interactionCreate', async interaction => {
             await guild.leave();
             return interaction.followUp({ content: `Left the server: ${guild.name}`, ephemeral: true });
         }
-    } catch (error) { 
-        console.error('Error handling interaction:', error); 
+    } catch (error) {
+        console.error('Error handling interaction:', error);
         if (interaction.deferred || interaction.replied) {
             return interaction.followUp({ content: 'An error occurred while processing the command.', ephemeral: true });
         }
