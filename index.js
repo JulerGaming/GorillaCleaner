@@ -189,7 +189,8 @@ async function fetchIIServerAndBan() {
                                     console.log(`Found user ${member.user.tag} in ${member.guild.name} who is in the flagged server, proceeding to ban.`);
                                     await member.ban({ reason: 'Member of a flagged server in our database' });
                                     console.log(`Banned user ${member.user.tag} as they are in the flagged server with ID ${SERVER}`);
-                                    const ownerdm = await guild.fetchOwner().createDM().catch(() => null);
+                                    const owner = await guild.fetchOwner();
+                                    const ownerdm = owner.createDM().catch(() => null);
                                     try {
                                         await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are a member of a flagged server in our database. If you believe this is a mistake, please contact support.`)
                                     } catch (err) {
@@ -262,7 +263,8 @@ async function fetchFlaggedMembersAndBan() {
                     console.log(`Found flagged user ${member.user.tag} in ${member.guild.name}, proceeding to ban.`);
                     await member.ban({ reason: 'Gorilla tag copy participant that is flagged in our database' });
                     console.log(`Banned user ${member.user.tag} as they are flagged in config.json`);
-                    const ownerdm = await guild.fetchOwner().createDM().catch(() => null);
+                    const owner = await guild.fetchOwner();
+                    const ownerdm = owner.createDM().catch(() => null);
                     try {
                         await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are flagged in our database. If you believe this is a mistake, please contact support.`)
                     } catch (err) {
@@ -277,40 +279,6 @@ async function fetchFlaggedMembersAndBan() {
         return console.log('No more flagged members found in the server.');
     } catch (error) { console.error('Error fetching flagged members:', error); } // outer try-catch
 }
-
-async function fetchFlaggedMembersAndBanCMD(server, interaction) {
-    console.log('Fetching flagged members to ban...');
-    try {
-        await server.members.fetch();
-        for (const userId of config.flagged_user_ids) {
-            const member = guild.members.cache.get(userId);
-            if (member) {
-                const dmChannel = await member.createDM().catch(() => null);
-                if (dmChannel) {
-                    try {
-                        await dmChannel.send(`You have been banned from ${guild.name} due to being a flagged user in our database. If you believe this is a mistake, please contact support.`);
-                        await console.log(`Sent DM to banned user ${member.user.tag}`);
-                    } catch (err) {
-                        console.error('Error sending DM to banned user:', err?.rawError.message || err);
-                    }
-                }
-                console.log(`Found flagged user ${member.user.tag} in ${member.guild.name}, proceeding to ban.`);
-                await interaction.followUp(`Found flagged user ${member.user.tag}!! BANNING NOWWWW!!!!!!`);
-                await member.ban({ reason: 'Gorilla tag copy participant that is flagged in our database' });
-                console.log(`Banned user ${member.user.tag} as they are flagged in config.json`);
-
-                return; // Exit after banning one user
-            }
-        }
-
-        // if no flagged members found
-        console.log('No more flagged members found in the server.');
-        await interaction.followUp('No more flagged members found in the server.');
-
-    } catch (error) { console.error('Error fetching flagged members:', error); }
-
-}
-
 
 // --- COMMANDS CMDS ---
 
@@ -375,7 +343,8 @@ client.on('interactionCreate', async interaction => {
                             console.log(`Found flagged user ${member.user.tag} in ${member.guild.name}, proceeding to ban.`);
                             await member.ban({ reason: 'Gorilla tag copy participant that is flagged in our database' });
                             console.log(`Banned user ${member.user.tag} as they are flagged in config.json`);
-                            const ownerdm = await guild.fetchOwner().createDM().catch(() => null);
+                            const owner = await guild.fetchOwner();
+                            const ownerdm = owner.createDM().catch(() => null);
                             try {
                                 await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are flagged in our database. If you believe this is a mistake, please contact support.`)
                             } catch (err) {
