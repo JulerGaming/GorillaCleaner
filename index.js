@@ -275,6 +275,9 @@ async function fetchFlaggedMembersAndBan() {
             }
             for (const member of guild.members.cache.values()) {
                 for (const clan of config.flagged_server_ids) {
+
+                    console.log(member);
+
                     if (member.primaryGuild.identityGuildId == clan) {
                         const dmChannel = await member.createDM().catch(() => null);
                         if (member.id === member.guild.ownerId) {
@@ -309,7 +312,7 @@ async function fetchFlaggedMembersAndBan() {
 
                         const owner = await guild.fetchOwner();
                         const ownerdm = owner.createDM().catch(() => null);
-                        
+
                         try {
                             await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as their Server Tag is blacklisted. If you believe this is a mistake, please contact support.`)
                         } catch (err) {
