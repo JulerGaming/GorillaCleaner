@@ -303,8 +303,20 @@ async function fetchFlaggedMembersAndBan() {
                                 await dmChannel.send(`You have been banned from ${guild.name} because your Server Tag is blacklisted.`)
                                 console.log(`Sent DM to banned user ${member.displayName}`)
                             } catch (e) { }
-                            await member.ban("Server Tag is blacklisted");
                         }
+
+                        await member.ban("Server Tag is blacklisted");
+
+                        const owner = await guild.fetchOwner();
+                        const ownerdm = owner.createDM().catch(() => null);
+                        
+                        try {
+                            await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as their Server Tag is blacklisted. If you believe this is a mistake, please contact support.`)
+                        } catch (err) {
+                            console.error('Error sending DM to server owner:', err?.rawError.message || err);
+                        }
+
+                        return;
                     }
                 }
             }
