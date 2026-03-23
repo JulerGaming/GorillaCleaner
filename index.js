@@ -276,9 +276,9 @@ async function fetchFlaggedMembersAndBan() {
             for (const member of guild.members.cache.values()) {
                 for (const clan of config.flagged_server_ids) {
 
-                    console.log(member);
+                    console.log(member.user);
 
-                    if (member.primaryGuild.identityGuildId == clan) {
+                    if (member.user.primaryGuild.identityGuildId == clan) {
                         const dmChannel = await member.createDM().catch(() => null);
                         if (member.id === member.guild.ownerId) {
                             // if member is owner of guild, dont ban and leave the server
