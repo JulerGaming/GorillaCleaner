@@ -486,6 +486,11 @@ client.on('interactionCreate', async interaction => {
                         .setColor('Red')
                         .setDescription("<a:urgent:1450268982736191508> **Members didn't arrive on time.**");
                     interaction.followUp({ embeds: [embed] });
+                } else if (error.code === "GatewayRateLimitError") {
+                    const embed = new EmbedBuilder()
+                        .setColor('Red')
+                        .setDescription("<a:urgent:1450268982736191508> **Bot is currently rate limited. Please try again later.**");
+                    interaction.followUp({ embeds: [embed] });
                 } else {
                     const embed = new EmbedBuilder()
                         .setColor('Red')
