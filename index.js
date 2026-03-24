@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder, InteractionReplyOptions, DiscordAPIError } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder } = require('discord.js');
 const { set } = require('forever/lib/forever/cli');
 const fs = require('fs');
 
@@ -17,8 +17,6 @@ console.log("Modlog Channel ID:", config.modlog_channel_id); // Debug print
 console.log("Flagged User IDs:", config.flagged_user_ids); // Debug print
 console.log("There are " + config.flagged_user_ids.length + " flagged user IDs."); // Debug print
 
-const OFFICIAL_SERVER_ID = config.official_server_id;
-const FLAGGED_SERVER_IDS = config.flagged_server_ids;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 if (!BOT_TOKEN) {
@@ -121,7 +119,7 @@ client.on('ready', () => {
     fetchIIServerAndBan();
 });
 
-client.on('guildMemberAdd', async (member) => {
+client.on('guildMemberAdd', async () => {
     fetchFlaggedMembersAndBan();
 });
 
