@@ -276,8 +276,8 @@ async function fetchFlaggedMembersAndBan() {
             for (const member of guild.members.cache.values()) {
                 for (const clan of config.flagged_server_ids) {
 
-                    console.log(member.user);
                     if (member.user.primaryGuild == null) continue;
+                    if (member.user.bot) continue;
 
                     if (member.user.primaryGuild.identityGuildId == clan) {
                         const dmChannel = await member.createDM().catch(() => null);
