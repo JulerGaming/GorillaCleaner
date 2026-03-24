@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder, InteractionReplyOptions } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder, InteractionReplyOptions, DiscordAPIError } = require('discord.js');
 const { set } = require('forever/lib/forever/cli');
 const fs = require('fs');
 
