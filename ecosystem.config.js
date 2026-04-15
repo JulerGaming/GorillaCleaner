@@ -4,6 +4,8 @@ module.exports = {
         script: "index.js",
         watch: ["index.js", "config.json"],
         ignore_watch: ["node_modules"],
-        watch_delay: 1000
+        watch_delay: 1000,
+        kill_signal: "SIGINT",
+        kill_timeout: 10000
     }]
 };

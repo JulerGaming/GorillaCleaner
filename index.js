@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder, InteractionReplyOptions } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder } = require('discord.js');
 const { set } = require('forever/lib/forever/cli');
 const fs = require('fs');
 
@@ -17,8 +17,6 @@ console.log("Modlog Channel ID:", config.modlog_channel_id); // Debug print
 console.log("Flagged User IDs:", config.flagged_user_ids); // Debug print
 console.log("There are " + config.flagged_user_ids.length + " flagged user IDs."); // Debug print
 
-const OFFICIAL_SERVER_ID = config.official_server_id;
-const FLAGGED_SERVER_IDS = config.flagged_server_ids;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 if (!BOT_TOKEN) {
@@ -28,18 +26,18 @@ if (!BOT_TOKEN) {
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildPresences,
         GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.MessageContent,
         GatewayIntentBits.DirectMessages,
-        GatewayIntentBits.DirectMessageReactions,
-        GatewayIntentBits.DirectMessageTyping,
-        GatewayIntentBits.GuildInvites
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildPresences
     ],
-    partials: [Partials.GuildMember],
+    partials: [
+        Partials.Message,
+        Partials.Channel
+    ],
 });
 
 async function shutdown() {
@@ -48,8 +46,7 @@ async function shutdown() {
 
 process.on('SIGINT', shutdown);
 
-const configJson = fs.readFileSync("./config.json", "utf-8");
-const cff = JSON.parse(configJson);
+const cff = require("./config.json");
 const { exec } = require("child_process");
 
 function run(cmd) {
@@ -124,7 +121,7 @@ client.on('ready', () => {
     fetchIIServerAndBan();
 });
 
-client.on('guildMemberAdd', async (member) => {
+client.on('guildMemberAdd', async () => {
     fetchFlaggedMembersAndBan();
 });
 
@@ -276,6 +273,57 @@ async function fetchFlaggedMembersAndBan() {
                     return; // Exit after banning one user
                 }
             }
+            for (const member of guild.members.cache.values()) {
+                for (const clan of config.flagged_server_ids) {
+
+                    if (member.user.primaryGuild === null) {continue;}
+                    if (member.user.bot) {continue;}
+
+                    if (member.user.primaryGuild.identityGuildId === clan) {
+                        const dmChannel = await member.createDM().catch(() => null);
+                        if (member.id === member.guild.ownerId) {
+                            // if member is owner of guild, dont ban and leave the server
+                            console.log(`User ${member.user.tag} is the owner of the guild, not banning.`);
+                            const dmChannel = await member.createDM().catch(() => null);
+                            dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`);
+                            member.guild.leave();
+                            console.log(`Left guild ${member.guild.name} because the flagged user is the owner.`);
+                            continue;
+                        }
+                        if (!member.bannable) {
+                            // if member is not bannable, skip and notify owner
+                            console.log(`Cannot ban user ${member.user.tag}, insufficient permissions.`);
+                            const owner = await guild.fetchOwner();
+                            const ownerdm = await owner.createDM().catch(() => null);
+                            try {
+                                await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
+                            } catch (err) {
+                                console.error('Error sending DM to server owner:', err?.rawError.message || err);
+                            }
+                            continue;
+                        }
+                        if (dmChannel) {
+                            try {
+                                await dmChannel.send(`You have been banned from ${guild.name} because your Server Tag is blacklisted.`);
+                                console.log(`Sent DM to banned user ${member.displayName}`);
+                            } catch (e) { }
+                        }
+
+                        await member.ban("Server Tag is blacklisted");
+
+                        const owner = await guild.fetchOwner();
+                        const ownerdm = owner.createDM().catch(() => null);
+
+                        try {
+                            await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as their Server Tag is blacklisted. If you believe this is a mistake, please contact support.`);
+                        } catch (err) {
+                            console.error('Error sending DM to server owner:', err?.rawError.message || err);
+                        }
+
+                        return;
+                    }
+                }
+            }
         }
         // if no flagged members found
         return console.log('No more flagged members found in the server.');
@@ -344,6 +392,10 @@ client.on('interactionCreate', async interaction => {
                             // replying fails, so not replying
                             console.log(`Found flagged user ${member.user.tag} in ${member.guild.name}, proceeding to ban.`);
                             await member.ban({ reason: 'Gorilla tag copy participant that is flagged in our database' });
+                            const embed = new EmbedBuilder()
+                                .setColor('Green')
+                                .setDescription(`<:check:1450916271183888385> Banned user ${member.user.tag} as they are flagged in our database.`);
+                            interaction.followUp({ embeds: [embed] });
                             console.log(`Banned user ${member.user.tag} as they are flagged in config.json`);
                             const owner = await guild.fetchOwner();
                             const ownerdm = owner.createDM().catch(() => null);
@@ -353,6 +405,70 @@ client.on('interactionCreate', async interaction => {
                                 console.error('Error sending DM to server owner:', err?.rawError.message || err);
                             }
                             return; // Exit after banning one user
+                        }
+                    }
+                    for (const member of guild.members.cache.values()) {
+                        for (const clan of config.flagged_server_ids) {
+
+                            if (member.user.primaryGuild === null) {continue;}
+                            if (member.user.bot) {continue;}
+
+                            if (member.user.primaryGuild.identityGuildId === clan) {
+                                const dmChannel = await member.createDM().catch(() => null);
+                                if (member.id === member.guild.ownerId) {
+                                    // if member is owner of guild, dont ban and leave the server
+                                    const embed = new EmbedBuilder()
+                                        .setColor('Red')
+                                        .setDescription("<a:urgent:1450268982736191508> **An error occurred.**");
+                                    interaction.followUp({ embeds: [embed] });
+                                    console.log(`User ${member.user.tag} is the owner of the guild, not banning.`);
+                                    const dmChannel = await member.createDM().catch(() => null);
+                                    dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`);
+                                    member.guild.leave();
+                                    console.log(`Left guild ${member.guild.name} because the flagged user is the owner.`);
+                                    continue;
+                                }
+                                if (!member.bannable) {
+                                    // if member is not bannable, skip and notify owner
+                                    console.log(`Cannot ban user ${member.user.tag}, insufficient permissions.`);
+                                    const embed = new EmbedBuilder()
+                                        .setColor('Red')
+                                        .setDescription(`<a:urgent:1450268982736191508> **Cannot ban user ${member.user.tag}, insufficient permissions.**`);
+                                    interaction.followUp({ embeds: [embed] });
+                                    const owner = await guild.fetchOwner();
+                                    const ownerdm = await owner.createDM().catch(() => null);
+                                    try {
+                                        await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
+                                    } catch (err) {
+                                        console.error('Error sending DM to server owner:', err?.rawError.message || err);
+                                    }
+                                    continue;
+                                }
+                                if (dmChannel) {
+                                    try {
+                                        await dmChannel.send(`You have been banned from ${guild.name} because your Server Tag is blacklisted.`);
+                                        console.log(`Sent DM to banned user ${member.displayName}`);
+                                    } catch (e) { }
+                                }
+
+                                await member.ban("Server Tag is blacklisted");
+
+                                const embed = new EmbedBuilder()
+                                    .setColor('Green')
+                                    .setDescription(`<:check:1450916271183888385> **Banned user ${member.user.tag} because their Server Tag is blacklisted.**`);
+                                interaction.followUp({ embeds: embed });
+
+                                const owner = await guild.fetchOwner();
+                                const ownerdm = owner.createDM().catch(() => null);
+
+                                try {
+                                    await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as their Server Tag is blacklisted. If you believe this is a mistake, please contact support.`);
+                                } catch (err) {
+                                    console.error('Error sending DM to server owner:', err?.rawError.message || err);
+                                }
+
+                                return;
+                            }
                         }
                     }
                 }
@@ -369,6 +485,11 @@ client.on('interactionCreate', async interaction => {
                     const embed = new EmbedBuilder()
                         .setColor('Red')
                         .setDescription("<a:urgent:1450268982736191508> **Members didn't arrive on time.**");
+                    interaction.followUp({ embeds: [embed] });
+                } else if (error.code === "GatewayRateLimitError") {
+                    const embed = new EmbedBuilder()
+                        .setColor('Red')
+                        .setDescription("<a:urgent:1450268982736191508> **Bot is currently rate limited. Please try again later.**");
                     interaction.followUp({ embeds: [embed] });
                 } else {
                     const embed = new EmbedBuilder()
