@@ -531,7 +531,7 @@ client.on('interactionCreate', async interaction => {
                     { name: 'Username', value: user.username, inline: true },
                     { name: 'Created At', value: user.createdAt.toDateString(), inline: true },
                     { name: 'Mention', value: `<@${user.id}>`, inline: true },
-                    { name: 'Is Flagged', value: config.flagged_user_ids.includes(user.id) ? 'Yes' : 'No', inline: true },
+                    { name: 'Is Flagged', value: config.flagged_user_ids[user.id] ? 'Yes' : 'No', inline: true },
                     { name: 'Reason for flagging (if flagged)', value: config.flagged_user_ids[user.id] || 'N/A', inline: true }
                 ],
                 timestamp: new Date(),
