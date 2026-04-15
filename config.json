@@ -12,6 +12,12 @@
         "1409251513976492122",
         "1237045622234943498"
     ],
+    "per-server-settings": {
+        "horror_apes_hp_v4": {
+            "banGtCopyUsers": false,
+            "banCheaters": true
+        }
+    },
     "modlog_channel_id": "1366827840003113056",
     "flagged_user_ids": {
         "1302448534410235936": "No reason given.",
@@ -113,10 +119,10 @@
         "894348631904223232": "No reason given.",
         "1414331141606998027": "No reason given.",
         "792576219785986090": "No reason given.",
-        "252548095244500994": "No reason given.",
-        "487676445884153857": "No reason given.",
-        "832552302027079710": "No reason given.",
-        "399904578188869648": "No reason given.",
+        "252548095244500994": "Cheater",
+        "487676445884153857": "Exposed for potential pedophile.",
+        "832552302027079710": "Cheat creator.",
+        "399904578188869648": "Associated with cheat creation.",
         "1282004470154133546": "No reason given.",
         "1055938297521770597": "No reason given.",
         "1320199471447146506": "No reason given.",

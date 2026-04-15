@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder, CommandInteraction } = require('discord.js');
 const { set } = require('forever/lib/forever/cli');
 const fs = require('fs');
 
@@ -15,7 +15,7 @@ console.log("Official Server ID:", config.official_server_id); // Debug print
 console.log("Flagged Server IDs:", config.flagged_server_ids); // Debug print
 console.log("Modlog Channel ID:", config.modlog_channel_id); // Debug print
 console.log("Flagged User IDs:", config.flagged_user_ids); // Debug print
-console.log("There are " + config.flagged_user_ids.length + " flagged user IDs."); // Debug print
+console.log("There are " + Object.keys(config.flagged_user_ids).length + " flagged user IDs."); // Debug print
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
@@ -216,88 +216,102 @@ async function fetchIIServerAndBan() {
     }
 }
 
-
-async function fetchFlaggedMembersAndBan() {
+/**
+ * 
+ * @param {CommandInteraction} interaction 
+ * @returns never
+ */
+async function fetchFlaggedMembersAndBan(interaction = null) {
     console.log('Fetching flagged members to ban...');
     try {
-        // index everyones servers
-        const guilds = await client.guilds.cache.values();
+        const guilds = client.guilds.cache.values();
         for (const guild of guilds) {
-            await guild.members.fetch(); // fetch all members
+            await guild.members.fetch();
             for (const [userId, reasonForFlag] of Object.entries(config.flagged_user_ids)) {
-                const member = guild.members.cache.get(userId); // get member by id
-                if (member) {
-                    const dmChannel = await member.createDM().catch(() => null);
-                    if (member.id === member.guild.ownerId) {
-                        // if member is owner of guild, dont ban and leave the server
-                        console.log(`User ${member.user.tag} is the owner of the guild, not banning.`);
-                        const dmChannel = await member.createDM().catch(() => null);
-                        dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`);
-                        member.guild.leave();
-                        console.log(`Left guild ${member.guild.name} because the flagged user is the owner.`);
-                        continue;
-                    }
-                    if (!member.bannable) {
-                        // if member is not bannable, skip and notify owner
-                        console.log(`Cannot ban user ${member.user.tag}, insufficient permissions.`);
-                        const owner = await guild.fetchOwner();
-                        const ownerdm = await owner.createDM().catch(() => null);
-                        try {
-                            await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
-                        } catch (err) {
-                            console.error('Error sending DM to server owner:', err?.rawError.message || err);
-                        }
-                        continue;
-                    }
-                    if (dmChannel) {
-                        // sends a dm to the user being banned before banning them
-                        try {
-                            await dmChannel.send(`You have been banned from ${guild.name} due to being a flagged user in our database. If you believe this is a mistake, please contact support.`);
-                            await console.log(`Sent DM to banned user ${member.user.tag}`);
-                        } catch (err) {
-                            console.error('Error sending DM to banned user:', err?.rawError.message || err);
-                        }
-                    }
-                    console.log(`Found flagged user ${member.user.tag} in ${member.guild.name}, proceeding to ban.`);
-                    await member.ban({ reason: 'Flagged user in our database: ' + reasonForFlag });
-                    console.log(`Banned user ${member.user.tag} as they are flagged in config.json`);
-                    const owner = await guild.fetchOwner();
-                    const ownerdm = owner.createDM().catch(() => null);
-                    try {
-                        await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are flagged in our database. If you believe this is a mistake, please contact support.`);
-                    } catch (err) {
-                        console.error('Error sending DM to server owner:', err?.rawError.message || err);
-                    }
+                const member = guild.members.cache.get(userId);
+                if (!member) { continue; }
+                if (member.user.bot) { continue; }
 
-                    return; // Exit after banning one user
+                if (config['per-server-settings'][guild.name.toLowerCase().replace(/ /g, '_')]?.banGtCopyUsers === false && reasonForFlag.toString().toLowerCase().includes('copy')) {
+                    continue;
                 }
+                if (config['per-server-settings'][guild.name.toLowerCase().replace(/ /g, '_')]?.banCheaters === false && reasonForFlag.toString().toLowerCase().includes('cheater')) {
+                    continue;
+                }
+
+                const dmChannel = await member.createDM().catch(() => null);
+                if (member.id === member.guild.ownerId) {
+                    console.log(`User ${member.user.tag} is the owner of the guild, not banning.`);
+                    const ownerDm = await member.createDM().catch(() => null);
+                    if (ownerDm) {
+                        ownerDm.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`).catch(() => null);
+                    }
+                    member.guild.leave();
+                    console.log(`Left guild ${member.guild.name} because the flagged user is the owner.`);
+                    continue;
+                }
+                if (!member.bannable) {
+                    console.log(`Cannot ban user ${member.user.tag}, insufficient permissions.`);
+                    const owner = await guild.fetchOwner();
+                    const ownerdm = await owner.createDM().catch(() => null);
+                    try {
+                        await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
+                    } catch (err) {
+                        console.error('Error sending DM to server owner:', err?.rawError?.message || err);
+                    }
+                    continue;
+                }
+                if (dmChannel) {
+                    try {
+                        await dmChannel.send(`You have been banned from ${guild.name} due to being a flagged user in our database. If you believe this is a mistake, please contact support.`);
+                        console.log(`Sent DM to banned user ${member.user.tag}`);
+                    } catch (err) {
+                        console.error('Error sending DM to banned user:', err?.rawError?.message || err);
+                    }
+                }
+                console.log(`Found flagged user ${member.user.tag} in ${member.guild.name}, proceeding to ban.`);
+                await member.ban({ reason: 'Flagged user in our database: ' + reasonForFlag });
+                console.log(`Banned user ${member.user.tag} as they are flagged in config.json`);
+                const owner = await guild.fetchOwner();
+                const ownerdm = owner.createDM().catch(() => null);
+                try {
+                    await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are flagged in our database. If you believe this is a mistake, please contact support.`);
+                } catch (err) {
+                    console.error('Error sending DM to server owner:', err?.rawError?.message || err);
+                }
+                if (interaction) {
+                    const embed = new EmbedBuilder()
+                        .setColor('Green')
+                        .setDescription(`<:check:1450916271183888385> Banned user ${member.user.tag} as they are flagged in our database.`);
+                    interaction.followUp({ embeds: [embed] });
+                }
+                return true;
             }
             for (const member of guild.members.cache.values()) {
                 for (const clan of config.flagged_server_ids) {
-
-                    if (member.user.primaryGuild === null) {continue;}
-                    if (member.user.bot) {continue;}
+                    if (!member.user.primaryGuild) { continue; }
+                    if (member.user.bot) { continue; }
 
                     if (member.user.primaryGuild.identityGuildId === clan) {
                         const dmChannel = await member.createDM().catch(() => null);
                         if (member.id === member.guild.ownerId) {
-                            // if member is owner of guild, dont ban and leave the server
                             console.log(`User ${member.user.tag} is the owner of the guild, not banning.`);
-                            const dmChannel = await member.createDM().catch(() => null);
-                            dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`);
+                            const ownerDm = await member.createDM().catch(() => null);
+                            if (ownerDm) {
+                                ownerDm.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`).catch(() => null);
+                            }
                             member.guild.leave();
                             console.log(`Left guild ${member.guild.name} because the flagged user is the owner.`);
                             continue;
                         }
                         if (!member.bannable) {
-                            // if member is not bannable, skip and notify owner
                             console.log(`Cannot ban user ${member.user.tag}, insufficient permissions.`);
                             const owner = await guild.fetchOwner();
                             const ownerdm = await owner.createDM().catch(() => null);
                             try {
                                 await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
                             } catch (err) {
-                                console.error('Error sending DM to server owner:', err?.rawError.message || err);
+                                console.error('Error sending DM to server owner:', err?.rawError?.message || err);
                             }
                             continue;
                         }
@@ -307,26 +321,44 @@ async function fetchFlaggedMembersAndBan() {
                                 console.log(`Sent DM to banned user ${member.displayName}`);
                             } catch (e) { }
                         }
-
-                        await member.ban("Server Tag is blacklisted");
-
+                        await member.ban('Server Tag is blacklisted');
                         const owner = await guild.fetchOwner();
                         const ownerdm = owner.createDM().catch(() => null);
-
                         try {
                             await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as their Server Tag is blacklisted. If you believe this is a mistake, please contact support.`);
                         } catch (err) {
-                            console.error('Error sending DM to server owner:', err?.rawError.message || err);
+                            console.error('Error sending DM to server owner:', err?.rawError?.message || err);
                         }
-
-                        return;
+                        if (interaction) {
+                            const embed = new EmbedBuilder()
+                                .setColor('Green')
+                                .setDescription(`<:check:1450916271183888385> **Banned user ${member.user.tag} because their Server Tag is blacklisted.**`);
+                            interaction.followUp({ embeds: [embed] });
+                        }
+                        return true;
                     }
                 }
             }
         }
-        // if no flagged members found
-        return console.log('No more flagged members found in the server.');
-    } catch (error) { console.error('Error fetching flagged members:', error); } // outer try-catch
+        if (interaction) {
+            const embed = new EmbedBuilder()
+                .setColor('Green')
+                .setDescription('<:check:1450916271183888385> **No more flagged members found in the server.**');
+            interaction.followUp({ embeds: [embed], ephemeral: true });
+        } else {
+            console.log('No more flagged members found in the server.');
+        }
+        return false;
+    } catch (error) {
+        console.error('Error fetching flagged members:', error);
+        if (interaction) {
+            const embed = new EmbedBuilder()
+                .setColor('Red')
+                .setDescription('<a:urgent:1450268982736191508> **An error occurred while scanning for flagged members.**');
+            interaction.followUp({ embeds: [embed], ephemeral: true });
+        }
+        return false;
+    }
 }
 
 // --- COMMANDS CMDS ---
@@ -335,168 +367,16 @@ client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) {return;}
     try {
         if (interaction.commandName === 'flagged-count') {
-            await interaction.reply(`There are currently ${config.flagged_user_ids.length} flagged users in the database.`);
+            await interaction.reply(`There are currently ${Object.keys(config.flagged_user_ids).length} flagged users in the database.`);
         }
         if (interaction.commandName === 'scan') {
             if (!interaction.member.permissions.has('Administrator')) {
                 await interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
                 return;
             }
-            interaction.deferReply({ ephemeral: true });
-            console.log('Fetching flagged members to ban...');
-            try {
-                // index everyones servers
-                const guilds = await client.guilds.cache.values();
-                // for each server check if any members are in the flagged list
-                for (const guild of guilds) {
-                    await guild.members.fetch(); // fetch all members
-                    for (const userId of config.flagged_user_ids) {
-                        const member = guild.members.cache.get(userId); // get member by id
-                        if (member) {
-                            const dmChannel = await member.createDM().catch(() => null);
-                            if (member.id === member.guild.ownerId) {
-                                // if member is owner of guild, dont ban and leave the server
-                                console.log(`User ${member.user.tag} is the owner of the guild, not banning.`);
-                                const dmChannel = await member.createDM().catch(() => null);
-                                dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`);
-                                member.guild.leave();
-                                console.log(`Left guild ${member.guild.name} because the flagged user is the owner.`);
-                                continue;
-                            }
-                            if (!member.bannable) {
-                                // if member is not bannable, skip and notify owner
-                                console.log(`Cannot ban user ${member.user.tag}, insufficient permissions.`);
-                                const embed = new EmbedBuilder()
-                                    .setColor('Red')
-                                    .setDescription(`<a:urgent:1450268982736191508> **Cannot ban ${member.user.displayName}, insufficient permissions.**`);
-                                interaction.followUp({ embeds: [embed] });
-                                const owner = await guild.fetchOwner();
-                                const ownerdm = await owner.createDM().catch(() => null);
-                                try {
-                                    await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
-                                } catch (err) {
-                                    console.error('Error sending DM to server owner:', err?.rawError.message || err);
-                                }
-                                continue;
-                            }
-                            if (dmChannel) {
-                                // sends a dm to the user being banned before banning them
-                                try {
-                                    await dmChannel.send(`You have been banned from ${guild.name} due to being a flagged user in our database. If you believe this is a mistake, please contact support.`);
-                                    await console.log(`Sent DM to banned user ${member.user.tag}`);
-                                } catch (err) {
-                                    console.error('Error sending DM to banned user:', err?.rawError.message || err);
-                                }
-                            }
-                            // replying fails, so not replying
-                            console.log(`Found flagged user ${member.user.tag} in ${member.guild.name}, proceeding to ban.`);
-                            await member.ban({ reason: 'Gorilla tag copy participant that is flagged in our database' });
-                            const embed = new EmbedBuilder()
-                                .setColor('Green')
-                                .setDescription(`<:check:1450916271183888385> Banned user ${member.user.tag} as they are flagged in our database.`);
-                            interaction.followUp({ embeds: [embed] });
-                            console.log(`Banned user ${member.user.tag} as they are flagged in config.json`);
-                            const owner = await guild.fetchOwner();
-                            const ownerdm = owner.createDM().catch(() => null);
-                            try {
-                                await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are flagged in our database. If you believe this is a mistake, please contact support.`);
-                            } catch (err) {
-                                console.error('Error sending DM to server owner:', err?.rawError.message || err);
-                            }
-                            return; // Exit after banning one user
-                        }
-                    }
-                    for (const member of guild.members.cache.values()) {
-                        for (const clan of config.flagged_server_ids) {
-
-                            if (member.user.primaryGuild === null) {continue;}
-                            if (member.user.bot) {continue;}
-
-                            if (member.user.primaryGuild.identityGuildId === clan) {
-                                const dmChannel = await member.createDM().catch(() => null);
-                                if (member.id === member.guild.ownerId) {
-                                    // if member is owner of guild, dont ban and leave the server
-                                    const embed = new EmbedBuilder()
-                                        .setColor('Red')
-                                        .setDescription("<a:urgent:1450268982736191508> **An error occurred.**");
-                                    interaction.followUp({ embeds: [embed] });
-                                    console.log(`User ${member.user.tag} is the owner of the guild, not banning.`);
-                                    const dmChannel = await member.createDM().catch(() => null);
-                                    dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`);
-                                    member.guild.leave();
-                                    console.log(`Left guild ${member.guild.name} because the flagged user is the owner.`);
-                                    continue;
-                                }
-                                if (!member.bannable) {
-                                    // if member is not bannable, skip and notify owner
-                                    console.log(`Cannot ban user ${member.user.tag}, insufficient permissions.`);
-                                    const embed = new EmbedBuilder()
-                                        .setColor('Red')
-                                        .setDescription(`<a:urgent:1450268982736191508> **Cannot ban user ${member.user.tag}, insufficient permissions.**`);
-                                    interaction.followUp({ embeds: [embed] });
-                                    const owner = await guild.fetchOwner();
-                                    const ownerdm = await owner.createDM().catch(() => null);
-                                    try {
-                                        await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
-                                    } catch (err) {
-                                        console.error('Error sending DM to server owner:', err?.rawError.message || err);
-                                    }
-                                    continue;
-                                }
-                                if (dmChannel) {
-                                    try {
-                                        await dmChannel.send(`You have been banned from ${guild.name} because your Server Tag is blacklisted.`);
-                                        console.log(`Sent DM to banned user ${member.displayName}`);
-                                    } catch (e) { }
-                                }
-
-                                await member.ban("Server Tag is blacklisted");
-
-                                const embed = new EmbedBuilder()
-                                    .setColor('Green')
-                                    .setDescription(`<:check:1450916271183888385> **Banned user ${member.user.tag} because their Server Tag is blacklisted.**`);
-                                interaction.followUp({ embeds: embed });
-
-                                const owner = await guild.fetchOwner();
-                                const ownerdm = owner.createDM().catch(() => null);
-
-                                try {
-                                    await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as their Server Tag is blacklisted. If you believe this is a mistake, please contact support.`);
-                                } catch (err) {
-                                    console.error('Error sending DM to server owner:', err?.rawError.message || err);
-                                }
-
-                                return;
-                            }
-                        }
-                    }
-                }
-                // if no flagged members found
-                const embed = new EmbedBuilder()
-                    .setColor('Green')
-                    .setDescription("<:check:1450916271183888385> **No more flagged members found in the server.**");
-                interaction.followUp({ embeds: [embed], ephemeral: true });
-                console.log('No more flagged members found in the server.');
-                return;
-            } catch (error) {
-                console.error('Error fetching flagged members:', error);
-                if (error.code === "GuildMembersTimeout") {
-                    const embed = new EmbedBuilder()
-                        .setColor('Red')
-                        .setDescription("<a:urgent:1450268982736191508> **Members didn't arrive on time.**");
-                    interaction.followUp({ embeds: [embed] });
-                } else if (error.code === "GatewayRateLimitError") {
-                    const embed = new EmbedBuilder()
-                        .setColor('Red')
-                        .setDescription("<a:urgent:1450268982736191508> **Bot is currently rate limited. Please try again later.**");
-                    interaction.followUp({ embeds: [embed] });
-                } else {
-                    const embed = new EmbedBuilder()
-                        .setColor('Red')
-                        .setDescription("<a:urgent:1450268982736191508> **An error occurred.**");
-                    interaction.followUp({ embeds: [embed] });
-                }
-            } // outer try-catch
+            await interaction.deferReply({ ephemeral: true });
+            await fetchFlaggedMembersAndBan(interaction);
+            return;
         }
         if (interaction.commandName === 'add-flagged') {
             if (interaction.user.id !== '804839205309382676') {return interaction.reply('You do not have permission to use this command.');}
