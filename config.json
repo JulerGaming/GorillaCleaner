@@ -16,6 +16,10 @@
         "horror_apes_hp_v4": {
             "banGtCopyUsers": false,
             "banCheaters": true
+        },
+        "horror_remake": {
+            "banGtCopyUsers": true,
+            "banCheaters": true
         }
     },
     "modlog_channel_id": "1366827840003113056",
