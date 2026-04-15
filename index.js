@@ -222,10 +222,9 @@ async function fetchFlaggedMembersAndBan() {
     try {
         // index everyones servers
         const guilds = await client.guilds.cache.values();
-        // for each server check if any members are in the flagged list
         for (const guild of guilds) {
             await guild.members.fetch(); // fetch all members
-            for (const userId of config.flagged_user_ids) {
+            for (const [userId, reasonForFlag] of Object.entries(config.flagged_user_ids)) {
                 const member = guild.members.cache.get(userId); // get member by id
                 if (member) {
                     const dmChannel = await member.createDM().catch(() => null);
@@ -260,7 +259,7 @@ async function fetchFlaggedMembersAndBan() {
                         }
                     }
                     console.log(`Found flagged user ${member.user.tag} in ${member.guild.name}, proceeding to ban.`);
-                    await member.ban({ reason: 'Gorilla tag copy participant that is flagged in our database' });
+                    await member.ban({ reason: 'Flagged user in our database: ' + reasonForFlag });
                     console.log(`Banned user ${member.user.tag} as they are flagged in config.json`);
                     const owner = await guild.fetchOwner();
                     const ownerdm = owner.createDM().catch(() => null);
