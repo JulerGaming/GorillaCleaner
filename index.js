@@ -219,7 +219,7 @@ async function fetchIIServerAndBan() {
 /**
  * 
  * @param {CommandInteraction} interaction 
- * @returns never
+ * @returns true or false
  */
 async function fetchFlaggedMembersAndBan(interaction = null) {
     console.log('Fetching flagged members to ban...');
