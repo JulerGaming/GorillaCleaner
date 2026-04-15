@@ -31,6 +31,12 @@ const slashRegister = async () => {
                             .setName('user_id')
                             .setDescription('The ID of the user to add to the flagged list')
                             .setRequired(true)
+                    )
+                    .addStringOption(option =>
+                        option
+                            .setName('reason')
+                            .setDescription('The reason for flagging the user')
+                            .setRequired(false)
                     ),
                 new SlashCommandBuilder()
                     .setName("userinfo")
@@ -64,3 +70,5 @@ const slashRegister = async () => {
 };
 
 slashRegister();
+
+module.exports = { slashRegister };

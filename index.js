@@ -5,11 +5,11 @@ const fs = require('fs');
 
 process.on('error', (err) => {
     throw new Error(`Uncaught error: ${err.message}`);
-})
+});
 
 const raw = fs.readFileSync('./config.json', 'utf8');
 console.log('Config file raw content:', raw); // Debug print
-const config = JSON.parse(raw);
+const config = require('./config.json');
 console.log("Configuration loaded:", config); // Debug print
 console.log("Official Server ID:", config.official_server_id); // Debug print
 console.log("Flagged Server IDs:", config.flagged_server_ids); // Debug print
@@ -46,7 +46,7 @@ async function shutdown() {
     await client.Destroy();
 }
 
-process.on('SIGINT', shutdown)
+process.on('SIGINT', shutdown);
 
 const configJson = fs.readFileSync("./config.json", "utf-8");
 const cff = JSON.parse(configJson);
@@ -55,14 +55,14 @@ const { exec } = require("child_process");
 function run(cmd) {
     return new Promise((resolve, reject) => {
         exec(cmd, (err, stdout, stderr) => {
-            if (err) return reject(stderr);
+            if (err) {return reject(stderr);}
             resolve(stdout.trim());
         });
     });
 }
 
 async function syncRepo() {
-    if (!cff.GitHub) return null;
+    if (!cff.GitHub) {return null;}
     try {
         console.log("Checking remote changes...");
 
@@ -104,17 +104,19 @@ syncRepo();
 
 setInterval(syncRepo, 1 * 60 * 1000); // every 1 minute
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     const guilds = client.guilds.cache;
-    const status = { name: `🔨 Banning ${config.flagged_user_ids.length} people from ${guilds.size} servers`, type: 4, visibility: 'online' };
+    const status = { name: `🔨 Banning ${Object.keys(config.flagged_user_ids).length} people from ${guilds.size} servers`, type: 4, visibility: 'online' };
+    const { slashRegister } = require('./slash-deploy.js');
+    await slashRegister();
     client.user.setPresence({
         activities: [{
             name: status.name,
             type: status.type ?? ActivityType.Playing
         }],
         status: status.visibility
-    })
+    });
 });
 
 client.on('ready', () => {
@@ -171,7 +173,7 @@ async function fetchIIServerAndBan() {
                                     const owner = await guild.fetchOwner();
                                     const ownerdm = await owner.createDM().catch(() => null);
                                     try {
-                                        await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`)
+                                        await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
                                     }
                                     catch (err) {
                                         console.error('Error sending DM to server owner:', err?.rawError.message || err);
@@ -192,7 +194,7 @@ async function fetchIIServerAndBan() {
                                     const owner = await guild.fetchOwner();
                                     const ownerdm = owner.createDM().catch(() => null);
                                     try {
-                                        await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are a member of a flagged server in our database. If you believe this is a mistake, please contact support.`)
+                                        await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are a member of a flagged server in our database. If you believe this is a mistake, please contact support.`);
                                     } catch (err) {
                                         console.error('Error sending DM to server owner:', err?.rawError.message || err);
                                     }
@@ -234,7 +236,7 @@ async function fetchFlaggedMembersAndBan() {
                         // if member is owner of guild, dont ban and leave the server
                         console.log(`User ${member.user.tag} is the owner of the guild, not banning.`);
                         const dmChannel = await member.createDM().catch(() => null);
-                        dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`)
+                        dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`);
                         member.guild.leave();
                         console.log(`Left guild ${member.guild.name} because the flagged user is the owner.`);
                         continue;
@@ -245,7 +247,7 @@ async function fetchFlaggedMembersAndBan() {
                         const owner = await guild.fetchOwner();
                         const ownerdm = await owner.createDM().catch(() => null);
                         try {
-                            await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`)
+                            await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
                         } catch (err) {
                             console.error('Error sending DM to server owner:', err?.rawError.message || err);
                         }
@@ -266,7 +268,7 @@ async function fetchFlaggedMembersAndBan() {
                     const owner = await guild.fetchOwner();
                     const ownerdm = owner.createDM().catch(() => null);
                     try {
-                        await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are flagged in our database. If you believe this is a mistake, please contact support.`)
+                        await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are flagged in our database. If you believe this is a mistake, please contact support.`);
                     } catch (err) {
                         console.error('Error sending DM to server owner:', err?.rawError.message || err);
                     }
@@ -283,7 +285,7 @@ async function fetchFlaggedMembersAndBan() {
 // --- COMMANDS CMDS ---
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
+    if (!interaction.isChatInputCommand()) {return;}
     try {
         if (interaction.commandName === 'flagged-count') {
             await interaction.reply(`There are currently ${config.flagged_user_ids.length} flagged users in the database.`);
@@ -293,7 +295,7 @@ client.on('interactionCreate', async interaction => {
                 await interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
                 return;
             }
-            interaction.deferReply({ ephemeral: true })
+            interaction.deferReply({ ephemeral: true });
             console.log('Fetching flagged members to ban...');
             try {
                 // index everyones servers
@@ -309,7 +311,7 @@ client.on('interactionCreate', async interaction => {
                                 // if member is owner of guild, dont ban and leave the server
                                 console.log(`User ${member.user.tag} is the owner of the guild, not banning.`);
                                 const dmChannel = await member.createDM().catch(() => null);
-                                dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`)
+                                dmChannel.send(`Hello, \n\nI left your server, **${member.guild.name}**, because you are the owner and you are flagged. \n\nIf you believe this is a mistake, please contact support.`);
                                 member.guild.leave();
                                 console.log(`Left guild ${member.guild.name} because the flagged user is the owner.`);
                                 continue;
@@ -324,7 +326,7 @@ client.on('interactionCreate', async interaction => {
                                 const owner = await guild.fetchOwner();
                                 const ownerdm = await owner.createDM().catch(() => null);
                                 try {
-                                    await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`)
+                                    await ownerdm.send(`# <a:urgent:1450268982736191508> URGENT!! <a:urgent:1450268982736191508>\nHello there, \n\n**${member.user.tag}** was found in your server. I wanted to ban them but they're a moderator/admin. Please take action accordingly.\n\nThank you! :heart:`);
                                 } catch (err) {
                                     console.error('Error sending DM to server owner:', err?.rawError.message || err);
                                 }
@@ -346,7 +348,7 @@ client.on('interactionCreate', async interaction => {
                             const owner = await guild.fetchOwner();
                             const ownerdm = owner.createDM().catch(() => null);
                             try {
-                                await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are flagged in our database. If you believe this is a mistake, please contact support.`)
+                                await ownerdm.send(`Hello, \n\n**${member.user.tag}** has been banned from your server, **${guild.name}**, as they are flagged in our database. If you believe this is a mistake, please contact support.`);
                             } catch (err) {
                                 console.error('Error sending DM to server owner:', err?.rawError.message || err);
                             }
@@ -377,14 +379,22 @@ client.on('interactionCreate', async interaction => {
             } // outer try-catch
         }
         if (interaction.commandName === 'add-flagged') {
-            if (interaction.user.id !== '804839205309382676') return interaction.reply('You do not have permission to use this command.');
+            if (interaction.user.id !== '804839205309382676') {return interaction.reply('You do not have permission to use this command.');}
             const userIdToAdd = interaction.options.getUser('user_id');
-            if (config.flagged_user_ids.includes(userIdToAdd.id)) {
-                return interaction.reply({ content: `${userIdToAdd.displayName} is already flagged.`, InteractionReplyOptions: { ephemeral: true } });
+            const reason = interaction.options.getString('reason') || 'No reason given.';
+            if (config.flagged_user_ids.hasOwnProperty(userIdToAdd.id)) {
+                const currentReason = config.flagged_user_ids[userIdToAdd.id];
+                if (currentReason !== reason) {
+                    config.flagged_user_ids[userIdToAdd.id] = reason;
+                    fs.writeFileSync('./config.json', JSON.stringify(config, null, 4));
+                    return interaction.reply({ content: `${userIdToAdd.displayName} is already flagged, but the reason has been updated to: ${reason}`, ephemeral: true });
+                } else {
+                    return interaction.reply({ content: `${userIdToAdd.displayName} is already flagged with that reason.`, ephemeral: true });
+                }
             } else {
-                config.flagged_user_ids.push(userIdToAdd.id); // try to not delete existing ids
+                config.flagged_user_ids[userIdToAdd.id] = reason;
                 fs.writeFileSync('./config.json', JSON.stringify(config, null, 4));
-                return interaction.reply({ content: `${userIdToAdd.displayName} has been added to the flagged list. There are now ${config.flagged_user_ids.length} flagged users.`, InteractionReplyOptions: { ephemeral: true } });
+                return interaction.reply({ content: `${userIdToAdd.displayName} has been added to the flagged list. There are now ${Object.keys(config.flagged_user_ids).length} flagged users.`, ephemeral: true });
             }
         }
         if (interaction.commandName === 'userinfo') {
@@ -402,6 +412,7 @@ client.on('interactionCreate', async interaction => {
                     { name: 'Created At', value: user.createdAt.toDateString(), inline: true },
                     { name: 'Mention', value: `<@${user.id}>`, inline: true },
                     { name: 'Is Flagged', value: config.flagged_user_ids.includes(user.id) ? 'Yes' : 'No', inline: true },
+                    { name: 'Reason for flagging (if flagged)', value: config.flagged_user_ids[user.id] || 'N/A', inline: true }
                 ],
                 timestamp: new Date(),
                 footer: { text: 'User Info', icon_url: client.user.displayAvatarURL() },
