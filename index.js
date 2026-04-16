@@ -240,6 +240,7 @@ async function lookUpUserUsingAPI(userId) {
             throw new Error(`Failed to fetch user with ID ${userId}. Status: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
+        console.log(data);
         return {
             id: data.id,
             username: data.username,
