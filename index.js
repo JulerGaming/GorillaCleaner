@@ -526,7 +526,8 @@ client.on('interactionCreate', async interaction => {
             }
             let currentMessage = '';
             for (const [userId, reason] of Object.entries(config.flagged_user_ids)) {
-                const user = await lookUpUserUsingAPI(userId);
+                let user = await lookUpUserUsingAPI(userId);
+                while (!user) { user = await lookUpUserUsingAPI(userId); }
                 const userName = user?.displayName || user?.username || userId || 'Unknown User';
                 const line = `${user?.displayName ? 'Name' : user?.username ? 'Username' : 'ID'} ${userName} - Reason: ${reason}\n`;
                 currentMessage += line;
