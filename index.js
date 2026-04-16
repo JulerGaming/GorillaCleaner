@@ -327,7 +327,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
                     const embed = new EmbedBuilder()
                         .setColor('Green')
                         .setDescription(`<:check:1450916271183888385> Banned user ${member.user.displayName} as they are flagged in our database.`);
-                    interaction.editReply({ embeds: [embed] });
+                    interaction.editReply({ content: '', embeds: [embed] });
                 }
                 return true;
             }
@@ -377,7 +377,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
                             const embed = new EmbedBuilder()
                                 .setColor('Green')
                                 .setDescription(`<:check:1450916271183888385> **Banned user ${member.user.tag} because their Server Tag is blacklisted.**`);
-                            interaction.editReply({ embeds: [embed] });
+                            interaction.editReply({ content: '', embeds: [embed] });
                         }
                         return true;
                     }
@@ -388,7 +388,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
             const embed = new EmbedBuilder()
                 .setColor('Green')
                 .setDescription('<:check:1450916271183888385> **No more flagged members found in the server.**');
-            interaction.editReply({ embeds: [embed], ephemeral: true });
+            interaction.editReply({ content: '', embeds: [embed], ephemeral: true });
         } else {
             console.log('No more flagged members found in the server.');
         }
@@ -399,7 +399,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
             const embed = new EmbedBuilder()
                 .setColor('Red')
                 .setDescription('<a:urgent:1450268982736191508> **An error occurred while scanning for flagged members.**');
-            interaction.editReply({ embeds: [embed], ephemeral: true });
+            interaction.editReply({ content: '', embeds: [embed], ephemeral: true });
         }
         return false;
     }
