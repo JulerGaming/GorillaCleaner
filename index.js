@@ -480,13 +480,23 @@ client.on('interactionCreate', async interaction => {
             if (Object.keys(config.flagged_user_ids).length === 0) {
                 return interaction.followUp({ content: 'There are currently no flagged users in the database.', ephemeral: true });
             }
-            let reply = '# Flagged users in the database:\n\n';
+            let header = '# Flagged users in the database:\n\n';
+            await interaction.followUp({ content: header, ephemeral: true });
+            let currentMessage = '';
             for (const [userId, reason] of Object.entries(config.flagged_user_ids)) {
                 const user = client.users.cache.get(userId);
                 const userName = user?.displayName || user?.username || userId || 'Unknown User';
-                reply += `**${user?.displayName ? 'Name' : user?.username ? 'Username' : 'ID'}:** ${userName} - **Reason:** ${reason}\n`;
+                const line = `**${user?.displayName ? 'Name' : user?.username ? 'Username' : 'ID'}:** ${userName} - **Reason:** ${reason}\n`;
+                if (currentMessage.length + line.length > 1900) { // leave some buffer
+                    await interaction.followUp({ content: currentMessage, ephemeral: true });
+                    currentMessage = line;
+                } else {
+                    currentMessage += line;
+                }
             }
-            return interaction.followUp({ content: reply, ephemeral: true });
+            if (currentMessage) {
+                await interaction.followUp({ content: currentMessage, ephemeral: true });
+            }
         }
     } catch (error) {
         console.error('Error handling interaction:', error);
