@@ -235,7 +235,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
                 if (config['per-server-settings'][guild.name.toLowerCase().replace(/ /g, '_')]?.banGtCopyUsers === false && reasonForFlag.toString().toLowerCase().includes('copy')) {
                     continue;
                 }
-                if (config['per-server-settings'][guild.name.toLowerCase().replace(/ /g, '_')]?.banCheaters === false && reasonForFlag.toString().toLowerCase().includes('cheater')) {
+                if (config['per-server-settings'][guild.name.toLowerCase().replace(/ /g, '_').replace('(', '').replace(')', '')]?.banCheaters === false && reasonForFlag.toString().toLowerCase().includes('cheater')) {
                     continue;
                 }
 
