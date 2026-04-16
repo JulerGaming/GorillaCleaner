@@ -240,15 +240,17 @@ async function lookUpUserUsingAPI(userId) {
             throw new Error(`Failed to fetch user with ID ${userId}. Status: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
-        console.log(data);
         return {
             id: data.id,
             username: data.username,
             discriminator: data.discriminator,
-            displayName: `${data.displayName}`, // this isnt old discord, discord no longer uses discriminators
+            displayName: data.username, // The API doesn't return displayName, so we'll just use username here
             avatarURL: `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=1024`,
+            banner: data.banner,
             bot: data.bot || false,
             createdAt: new Date(data.created_at),
+            clan: data.clan,
+            primary_guild: data.primary_guild
         };
     } catch (error) {
         console.error(`Error looking up user with ID ${userId}:`, error);
