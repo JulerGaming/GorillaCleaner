@@ -366,6 +366,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) {return;}
     try {
+        if (config.flagged_user_ids[interaction.user.id]) { return interaction.reply({ content: 'You are flagged in the database for: ' + config.flagged_user_ids[interaction.user.id] + " and cannot interact with this bot.", ephemeral: true }); }
         if (interaction.commandName === 'flagged-count') {
             await interaction.reply(`There are currently ${Object.keys(config.flagged_user_ids).length} flagged users in the database.`);
         }
@@ -472,6 +473,21 @@ client.on('interactionCreate', async interaction => {
             console.log(`Leaving server: ${guild.name} (ID: ${guild.id})`);
             await guild.leave();
             return interaction.followUp({ content: `Left the server: ${guild.name}`, ephemeral: true });
+        }
+        if (interaction.commandName === 'flagged-users') { 
+            // Everyone can use this command
+            await interaction.deferReply({ ephemeral: true });
+            if (Object.keys(config.flagged_user_ids).length === 0) {
+                return interaction.followUp({ content: 'There are currently no flagged users in the database.', ephemeral: true });
+            }
+            let reply = 'Flagged users in the database:\n\n';
+            for (const [userId, reason] of Object.entries(config.flagged_user_ids)) {
+                const user = client.users.cache.get(userId);
+                const userName = user?.displayName || user?.username || userId || 'Unknown User';
+                reply += `**${user?.displayName ? 'Name' : user?.username ? 'Username' : 'ID'}:** ${userName} - **Reason:** ${reason}\n`;
+            }
+            return interaction.followUp({ content: reply, ephemeral: true });
+
         }
     } catch (error) {
         console.error('Error handling interaction:', error);
