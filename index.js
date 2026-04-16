@@ -232,10 +232,10 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
                 if (!member) { continue; }
                 if (member.user.bot) { continue; }
 
-                if (config['per-server-settings'][guild.name.toLowerCase().replace(/ /g, '_')]?.banGtCopyUsers === false && reasonForFlag.toString().toLowerCase().includes('copy')) {
+                if (config['per-server-settings'][guild.name.toLowerCase().replace(/ /g, '_').replace('(', '').replace(')', '').replace('|', '')]?.banGtCopyUsers === false && reasonForFlag.toString().toLowerCase().includes('copy')) {
                     continue;
                 }
-                if (config['per-server-settings'][guild.name.toLowerCase().replace(/ /g, '_').replace('(', '').replace(')', '')]?.banCheaters === false && reasonForFlag.toString().toLowerCase().includes('cheater')) {
+                if (config['per-server-settings'][guild.name.toLowerCase().replace(/ /g, '_').replace('(', '').replace(')', '').replace('|', '')]?.banCheaters === false && reasonForFlag.toString().toLowerCase().includes('cheater')) {
                     continue;
                 }
 
