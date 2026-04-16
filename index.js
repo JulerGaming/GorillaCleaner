@@ -525,12 +525,21 @@ client.on('interactionCreate', async interaction => {
                 return interaction.editReply({ content: '<a:urgent:1450268982736191508> There are currently no flagged users in the database.', ephemeral: true });
             }
             let currentMessage = '';
-            for (const [userId, reason] of Object.entries(config.flagged_user_ids)) {
+            const entries = Object.entries(config.flagged_user_ids);
+            const total = entries.length;
+            const startTime = Date.now();
+            for (let i = 0; i < entries.length; i++) {
+                const [userId, reason] = entries[i];
                 let user = await lookUpUserUsingAPI(userId);
                 while (!user) { user = await lookUpUserUsingAPI(userId); }
                 const userName = user?.displayName || user?.username || 'Unknown User';
                 const line = `${user?.displayName ? 'Name' : 'Username'}: ${userName} - Reason: ${reason}\n`;
                 currentMessage += line;
+                const elapsed = (Date.now() - startTime) / 1000;
+                const avgPerUser = elapsed / (i + 1);
+                const remaining = Math.ceil(avgPerUser * (total - i - 1));
+                const etaText = remaining > 0 ? ` (~${remaining}s remaining)` : '';
+                await interaction.editReply({ content: `<a:Searching:1494438509233307718> Fetching flagged users... (${i + 1}/${total})${etaText}`, ephemeral: true });
             }
             if (currentMessage) {
                 fs.writeFileSync('./flagged_users_list.txt', currentMessage);
