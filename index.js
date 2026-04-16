@@ -231,7 +231,7 @@ async function fetchIIServerAndBan() {
  */
 async function lookUpUserUsingAPI(userId) {
     try {
-        const response = await fetch(`https://discord.com/api/users/${userId}`, {
+        const response = await fetch(`https://discord.com/api/v10/users/${userId}`, {
             headers: {
                 'Authorization': `Bot ${BOT_TOKEN}`
             }
