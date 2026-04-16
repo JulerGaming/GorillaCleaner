@@ -1,30 +1,6 @@
 const { execSync, spawn } = require('child_process');
 const path = require('path');
 
-(function checkPackages() {
-    const pkg = JSON.parse(require('fs').readFileSync('./package.json', 'utf8'));
-    const allDeps = Object.assign({}, pkg.dependencies);
-    const missing = [];
-    for (const [name, version] of Object.entries(allDeps)) {
-        try {
-            require.resolve(name);
-        } catch {
-            missing.push(name);
-        }
-    }
-    if (missing.length > 0) {
-        console.log(`Missing packages: ${missing.join(', ')}. Running npm install...`);
-        execSync('npm install', { stdio: 'inherit' });
-        console.log('Packages installed. Restarting...');
-        const child = spawn(process.execPath, process.argv.slice(1), {
-            detached: true,
-            stdio: 'inherit'
-        });
-        child.unref();
-        process.exit(0);
-    }
-})();
-
 require('dotenv').config();
 require('ts-node').register();
 const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder, CommandInteraction, User } = require('discord.js');
@@ -80,14 +56,14 @@ const { exec } = require("child_process");
 function run(cmd) {
     return new Promise((resolve, reject) => {
         exec(cmd, (err, stdout, stderr) => {
-            if (err) {return reject(stderr);}
+            if (err) { return reject(stderr); }
             resolve(stdout.trim());
         });
     });
 }
 
 async function syncRepo() {
-    if (!cff.GitHub) {return null;}
+    if (!cff.GitHub) { return null; }
     try {
         console.log("Checking remote changes...");
 
@@ -126,6 +102,31 @@ async function syncRepo() {
 }
 
 syncRepo();
+
+(function checkPackages() {
+    const pkg = JSON.parse(require('fs').readFileSync('./package.json', 'utf8'));
+    const allDeps = Object.assign({}, pkg.dependencies);
+    const missing = [];
+    for (const [name, version] of Object.entries(allDeps)) {
+        try {
+            require.resolve(name);
+        } catch {
+            missing.push(name);
+        }
+    }
+    if (missing.length > 0) {
+        if (missing.toString().includes('save-dev')) { return; }
+        console.log(`Missing packages: ${missing.join(', ')}. Running npm install...`);
+        execSync('npm install', { stdio: 'inherit' });
+        console.log('Packages installed. Restarting...');
+        const child = spawn(process.execPath, process.argv.slice(1), {
+            detached: true,
+            stdio: 'inherit'
+        });
+        child.unref();
+        process.exit(0);
+    }
+})();
 
 setInterval(syncRepo, 1 * 60 * 1000); // every 1 minute
 
@@ -426,7 +427,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
 // --- COMMANDS CMDS ---
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) {return;}
+    if (!interaction.isChatInputCommand()) { return; }
     try {
         if (config.flagged_user_ids[interaction.user.id]) { return interaction.reply({ content: 'You are flagged in the database for: ' + config.flagged_user_ids[interaction.user.id] + " and cannot interact with this bot.", ephemeral: true }); }
         if (interaction.commandName === 'flagged-count') {
@@ -442,7 +443,7 @@ client.on('interactionCreate', async interaction => {
             return;
         }
         if (interaction.commandName === 'add-flagged') {
-            if (interaction.user.id !== '804839205309382676') {return interaction.reply('You do not have permission to use this command.');}
+            if (interaction.user.id !== '804839205309382676') { return interaction.reply('You do not have permission to use this command.'); }
             const userIdToAdd = interaction.options.getUser('user_id');
             const reason = interaction.options.getString('reason') || 'No reason given.';
             if (config.flagged_user_ids.hasOwnProperty(userIdToAdd.id)) {
@@ -536,7 +537,7 @@ client.on('interactionCreate', async interaction => {
             await guild.leave();
             return interaction.editReply({ content: `<:check:1450916271183888385> Left the server: ${guild.name}`, ephemeral: true });
         }
-        if (interaction.commandName === 'flagged-users') { 
+        if (interaction.commandName === 'flagged-users') {
             // Everyone can use this command
             await interaction.reply({ content: '<a:Searching:1494438509233307718> Fetching flagged users...', ephemeral: true });
             if (Object.keys(config.flagged_user_ids).length === 0) {
