@@ -1,4 +1,32 @@
+const { execSync, spawn } = require('child_process');
+const path = require('path');
+
+(function checkPackages() {
+    const pkg = JSON.parse(require('fs').readFileSync('./package.json', 'utf8'));
+    const allDeps = Object.assign({}, pkg.dependencies, pkg.devDependencies);
+    const missing = [];
+    for (const [name, version] of Object.entries(allDeps)) {
+        try {
+            require.resolve(name);
+        } catch {
+            missing.push(name);
+        }
+    }
+    if (missing.length > 0) {
+        console.log(`Missing packages: ${missing.join(', ')}. Running npm install...`);
+        execSync('npm install', { stdio: 'inherit' });
+        console.log('Packages installed. Restarting...');
+        const child = spawn(process.execPath, process.argv.slice(1), {
+            detached: true,
+            stdio: 'inherit'
+        });
+        child.unref();
+        process.exit(0);
+    }
+})();
+
 require('dotenv').config();
+require('ts-node').register();
 const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder, CommandInteraction, User } = require('discord.js');
 const { set } = require('forever/lib/forever/cli');
 const fs = require('fs');
@@ -216,6 +244,8 @@ async function fetchIIServerAndBan() {
     }
 }
 
+const { DiscordUser } = require('./userField');
+
 /**
  * Looks up a discord user by their ID using the Discord API. Only has:
  * - id
@@ -227,7 +257,7 @@ async function fetchIIServerAndBan() {
  * - createdAt (Date object)
  * and nothing else cause it requires the bot to also be in the server of the user to get more info.
  * @param {string} userId 
- * @returns {User|null} user object or null if not found
+ * @returns {DiscordUser|null} user object or null if not found
  */
 async function lookUpUserUsingAPI(userId) {
     try {
@@ -240,20 +270,8 @@ async function lookUpUserUsingAPI(userId) {
             throw new Error(`Failed to fetch user with ID ${userId}. Status: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
-        return {
-            id: data.id,
-            username: data.username,
-            discriminator: data.discriminator,
-            displayName: data.username, // The API doesn't return displayName, so we'll just use username here
-            avatarURL: `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=1024`,
-            banner: data.banner,
-            bot: data.bot || false,
-            createdAt: new Date(data.created_at),
-            clan: data.clan,
-            primary_guild: data.primary_guild
-        };
+        return new DiscordUser(data);
     } catch (error) {
-        console.error(`Error looking up user with ID ${userId}:`, error);
         return null;
     }
 }
