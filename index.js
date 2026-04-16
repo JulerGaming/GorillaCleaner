@@ -3,7 +3,7 @@ const path = require('path');
 
 (function checkPackages() {
     const pkg = JSON.parse(require('fs').readFileSync('./package.json', 'utf8'));
-    const allDeps = Object.assign({}, pkg.dependencies, pkg.devDependencies);
+    const allDeps = Object.assign({}, pkg.dependencies);
     const missing = [];
     for (const [name, version] of Object.entries(allDeps)) {
         try {
