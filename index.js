@@ -528,8 +528,8 @@ client.on('interactionCreate', async interaction => {
             for (const [userId, reason] of Object.entries(config.flagged_user_ids)) {
                 let user = await lookUpUserUsingAPI(userId);
                 while (!user) { user = await lookUpUserUsingAPI(userId); }
-                const userName = user?.displayName || user?.username || userId || 'Unknown User';
-                const line = `${user?.displayName ? 'Name' : user?.username ? 'Username' : 'ID'} ${userName} - Reason: ${reason}\n`;
+                const userName = user?.displayName || user?.username || 'Unknown User';
+                const line = `${user?.displayName ? 'Name' : 'Username'}: ${userName} - Reason: ${reason}\n`;
                 currentMessage += line;
             }
             if (currentMessage) {
