@@ -520,9 +520,9 @@ client.on('interactionCreate', async interaction => {
         }
         if (interaction.commandName === 'flagged-users') { 
             // Everyone can use this command
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.reply({ content: '<a:Searching:1494438509233307718> Fetching flagged users...', ephemeral: true });
             if (Object.keys(config.flagged_user_ids).length === 0) {
-                return interaction.followUp({ content: 'There are currently no flagged users in the database.', ephemeral: true });
+                return interaction.followUp({ content: '<a:urgent:1450268982736191508> There are currently no flagged users in the database.', ephemeral: true });
             }
             let currentMessage = '';
             for (const [userId, reason] of Object.entries(config.flagged_user_ids)) {
@@ -533,7 +533,7 @@ client.on('interactionCreate', async interaction => {
             }
             if (currentMessage) {
                 fs.writeFileSync('./flagged_users_list.txt', currentMessage);
-                await interaction.followUp({ content: "Here is the file with the flagged users:", ephemeral: true, files: [{ attachment: './flagged_users_list.txt', name: 'flagged_users_list.txt' }] });
+                await interaction.editReply({ content: "<:check:1450916271183888385> Here is the file with the flagged users:", ephemeral: true, files: [{ attachment: './flagged_users_list.txt', name: 'flagged_users_list.txt' }] });
                 fs.unlinkSync('./flagged_users_list.txt');
             }
         }
