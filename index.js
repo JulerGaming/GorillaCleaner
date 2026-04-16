@@ -327,7 +327,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
                     const embed = new EmbedBuilder()
                         .setColor('Green')
                         .setDescription(`<:check:1450916271183888385> Banned user ${member.user.displayName} as they are flagged in our database.`);
-                    interaction.followUp({ embeds: [embed] });
+                    interaction.editReply({ embeds: [embed] });
                 }
                 return true;
             }
@@ -377,7 +377,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
                             const embed = new EmbedBuilder()
                                 .setColor('Green')
                                 .setDescription(`<:check:1450916271183888385> **Banned user ${member.user.tag} because their Server Tag is blacklisted.**`);
-                            interaction.followUp({ embeds: [embed] });
+                            interaction.editReply({ embeds: [embed] });
                         }
                         return true;
                     }
@@ -388,7 +388,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
             const embed = new EmbedBuilder()
                 .setColor('Green')
                 .setDescription('<:check:1450916271183888385> **No more flagged members found in the server.**');
-            interaction.followUp({ embeds: [embed], ephemeral: true });
+            interaction.editReply({ embeds: [embed], ephemeral: true });
         } else {
             console.log('No more flagged members found in the server.');
         }
@@ -399,7 +399,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
             const embed = new EmbedBuilder()
                 .setColor('Red')
                 .setDescription('<a:urgent:1450268982736191508> **An error occurred while scanning for flagged members.**');
-            interaction.followUp({ embeds: [embed], ephemeral: true });
+            interaction.editReply({ embeds: [embed], ephemeral: true });
         }
         return false;
     }
@@ -419,7 +419,7 @@ client.on('interactionCreate', async interaction => {
                 await interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
                 return;
             }
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.reply({ content: '<a:Searching:1494438509233307718> Scanning for flagged members...', ephemeral: true });
             await fetchFlaggedMembersAndBan(interaction);
             return;
         }
@@ -468,11 +468,11 @@ client.on('interactionCreate', async interaction => {
             if (interaction.user.id !== '804839205309382676') {
                 return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
             }
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.reply({ content: '<a:Searching:1494438509233307718> Fetching flagged users...', ephemeral: true });
             // make dm channel with user
             const dm = await interaction.user.createDM();
             if (!dm) {
-                return interaction.reply({ content: 'Could not create DM channel.', ephemeral: true });
+                return interaction.editReply({ content: '<a:urgent:1450268982736191508> Could not create DM channel.', ephemeral: true });
             }
             // so this is basically a command that gets all the servers the bot is in and sends it to the user in a DM (only an invite link)
             const guilds = client.guilds.cache;
@@ -487,10 +487,10 @@ client.on('interactionCreate', async interaction => {
             }
             try {
                 await dm.send(reply);
-                await interaction.followUp({ content: 'Sent you a DM with the list of servers!', ephemeral: true });
+                await interaction.editReply({ content: '<:check:1450916271183888385> Sent you a DM with the list of servers!', ephemeral: true });
             } catch (err) {
                 console.error('Error sending DM to user:', err?.rawError.message || err);
-                return interaction.followUp({ content: 'Could not send you a DM. Do you have DMs disabled?', ephemeral: true });
+                return interaction.editReply({ content: '<a:urgent:1450268982736191508> Could not send you a DM. Do you have DMs disabled?', ephemeral: true });
             }
         }
         if (interaction.commandName === 'leaveserver') {
@@ -498,11 +498,11 @@ client.on('interactionCreate', async interaction => {
                 // if it isnt me than dont execute
                 return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
             }
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.reply({ content: '<a:UnknownLoading:1494440425036058664> Leaving server...', ephemeral: true });
             const serverId = interaction.options.getString('server_id');
             const guild = client.guilds.cache.get(serverId);
             if (!guild) {
-                return interaction.followUp({ content: 'Bot is not in a server with that ID.', ephemeral: true });
+                return interaction.editReply({ content: 'Bot is not in a server with that ID.', ephemeral: true });
             }
             // create a dm channel with the server owner (the one that the bot is leaving)
             const owner = await guild.fetchOwner();
@@ -516,7 +516,7 @@ client.on('interactionCreate', async interaction => {
             }
             console.log(`Leaving server: ${guild.name} (ID: ${guild.id})`);
             await guild.leave();
-            return interaction.followUp({ content: `Left the server: ${guild.name}`, ephemeral: true });
+            return interaction.editReply({ content: `<:check:1450916271183888385> Left the server: ${guild.name}`, ephemeral: true });
         }
         if (interaction.commandName === 'flagged-users') { 
             // Everyone can use this command
@@ -540,7 +540,7 @@ client.on('interactionCreate', async interaction => {
     } catch (error) {
         console.error('Error handling interaction:', error);
         if (interaction.deferred || interaction.replied) {
-            return interaction.followUp({ content: 'An error occurred while processing the command.', ephemeral: true });
+            return interaction.editReply({ content: '<a:urgent:1450268982736191508> An error occurred while processing the command.', ephemeral: true });
         }
         return interaction.reply({ content: 'An error occurred while processing the command.', ephemeral: true });
     }
