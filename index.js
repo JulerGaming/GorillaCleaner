@@ -66,7 +66,6 @@ let hasSyncRepo = false;
 
 async function syncRepo() {
     if (!cff.GitHub) { return null; }
-    hasSyncRepo = true;
     try {
         console.log("Checking remote changes...");
 
@@ -98,6 +97,8 @@ async function syncRepo() {
         } else {
             console.log("No local changes.");
         }
+
+        hasSyncRepo = true;
 
     } catch (err) {
         console.error("Git sync error:", err);
