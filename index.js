@@ -118,9 +118,9 @@ syncRepo();
             missing.push(name);
         }
     }
-    if (missing.length > 0) {
-        if (missing === 'save-dev') { return; }
-        console.log(`Missing packages: ${missing.join(', ')}. Running npm install...`);
+    const filtered = missing.filter(name => name !== 'save-dev');
+    if (filtered.length > 0) {
+        console.log(`Missing packages: ${filtered.join(', ')}. Running npm install...`);
         execSync('npm install', { stdio: 'inherit' });
         console.log('Packages installed. Restarting...');
         const child = spawn(process.execPath, process.argv.slice(1), {
