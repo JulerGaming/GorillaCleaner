@@ -522,22 +522,17 @@ client.on('interactionCreate', async interaction => {
             if (Object.keys(config.flagged_user_ids).length === 0) {
                 return interaction.followUp({ content: 'There are currently no flagged users in the database.', ephemeral: true });
             }
-            let header = '# Flagged users in the database:\n\n';
-            await interaction.followUp({ content: header, ephemeral: true });
             let currentMessage = '';
             for (const [userId, reason] of Object.entries(config.flagged_user_ids)) {
                 const user = await lookUpUserUsingAPI(userId);
                 const userName = user?.displayName || user?.username || userId || 'Unknown User';
                 const line = `**${user?.displayName ? 'Name' : user?.username ? 'Username' : 'ID'}:** ${userName} - **Reason:** ${reason}\n`;
-                if (currentMessage.length + line.length > 1900) { // leave some buffer
-                    await interaction.followUp({ content: currentMessage, ephemeral: true });
-                    currentMessage = line;
-                } else {
-                    currentMessage += line;
-                }
+                currentMessage += line;
             }
             if (currentMessage) {
-                await interaction.followUp({ content: currentMessage, ephemeral: true });
+                fs.writeFileSync('./flagged_users_list.txt', currentMessage);
+                await interaction.followUp({ content: "Here is the file with the flagged users:", ephemeral: true, files: [{ attachment: './flagged_users_list.txt', name: 'flagged_users_list.txt' }] });
+                fs.unlinkSync('./flagged_users_list.txt');
             }
         }
     } catch (error) {
