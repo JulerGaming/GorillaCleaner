@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder, CommandInteraction } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder, CommandInteraction, User } = require('discord.js');
 const { set } = require('forever/lib/forever/cli');
 const fs = require('fs');
 
@@ -213,6 +213,45 @@ async function fetchIIServerAndBan() {
         console.log("Finished processing flagged servers.");
     } catch (error) {
         console.error('Error fetching server widget or banning users:', error);
+    }
+}
+
+/**
+ * Looks up a discord user by their ID using the Discord API. Only has:
+ * - id
+ * - username
+ * - discriminator
+ * - displayName
+ * - avatarURL
+ * - bot (boolean)
+ * - createdAt (Date object)
+ * and nothing else cause it requires the bot to also be in the server of the user to get more info.
+ * @param {string} userId 
+ * @returns {User|null} user object or null if not found
+ */
+async function lookUpUserUsingAPI(userId) {
+    try {
+        const response = await fetch(`https://discord.com/api/users/${userId}`, {
+            headers: {
+                'Authorization': `Bot ${BOT_TOKEN}`
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch user with ID ${userId}. Status: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        return {
+            id: data.id,
+            username: data.username,
+            discriminator: data.discriminator,
+            displayName: `${data.displayName}`, // this isnt old discord, discord no longer uses discriminators
+            avatarURL: `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=1024`,
+            bot: data.bot || false,
+            createdAt: new Date(data.created_at),
+        };
+    } catch (error) {
+        console.error(`Error looking up user with ID ${userId}:`, error);
+        return null;
     }
 }
 
@@ -486,7 +525,7 @@ client.on('interactionCreate', async interaction => {
             await interaction.followUp({ content: header, ephemeral: true });
             let currentMessage = '';
             for (const [userId, reason] of Object.entries(config.flagged_user_ids)) {
-                const user = client.users.cache.get(userId);
+                const user = await lookUpUserUsingAPI(userId);
                 const userName = user?.displayName || user?.username || userId || 'Unknown User';
                 const line = `**${user?.displayName ? 'Name' : user?.username ? 'Username' : 'ID'}:** ${userName} - **Reason:** ${reason}\n`;
                 if (currentMessage.length + line.length > 1900) { // leave some buffer
