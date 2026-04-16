@@ -115,7 +115,7 @@ syncRepo();
         }
     }
     if (missing.length > 0) {
-        if (missing.toString().includes('save-dev')) { return; }
+        if (missing === 'save-dev') { return; }
         console.log(`Missing packages: ${missing.join(', ')}. Running npm install...`);
         execSync('npm install', { stdio: 'inherit' });
         console.log('Packages installed. Restarting...');
