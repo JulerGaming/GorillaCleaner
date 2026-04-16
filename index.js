@@ -62,8 +62,11 @@ function run(cmd) {
     });
 }
 
+let hasSyncRepo = false;
+
 async function syncRepo() {
     if (!cff.GitHub) { return null; }
+    hasSyncRepo = true;
     try {
         console.log("Checking remote changes...");
 
@@ -104,6 +107,7 @@ async function syncRepo() {
 syncRepo();
 
 (function checkPackages() {
+    if (!hasSyncRepo) { return; }
     const pkg = JSON.parse(require('fs').readFileSync('./package.json', 'utf8'));
     const allDeps = Object.assign({}, pkg.dependencies);
     const missing = [];
