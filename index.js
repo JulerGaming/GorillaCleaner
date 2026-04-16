@@ -522,7 +522,7 @@ client.on('interactionCreate', async interaction => {
             // Everyone can use this command
             await interaction.reply({ content: '<a:Searching:1494438509233307718> Fetching flagged users...', ephemeral: true });
             if (Object.keys(config.flagged_user_ids).length === 0) {
-                return interaction.followUp({ content: '<a:urgent:1450268982736191508> There are currently no flagged users in the database.', ephemeral: true });
+                return interaction.editReply({ content: '<a:urgent:1450268982736191508> There are currently no flagged users in the database.', ephemeral: true });
             }
             let currentMessage = '';
             for (const [userId, reason] of Object.entries(config.flagged_user_ids)) {
