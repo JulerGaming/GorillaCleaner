@@ -248,17 +248,31 @@ async function fetchIIServerAndBan() {
 const { DiscordUser } = require('./userField');
 
 /**
- * Looks up a discord user by their ID using the Discord API. Only has:
- * - id
- * - username
- * - discriminator
- * - displayName
- * - avatarURL
- * - bot (boolean)
- * - createdAt (Date object)
- * and nothing else cause it requires the bot to also be in the server of the user to get more info.
- * @param {string} userId 
- * @returns {DiscordUser|null} user object or null if not found
+ * Looks up a discord user by their ID using the Discord API.
+ * @param {string} userId
+ * @returns {Promise<DiscordUser|null>} user object or null if not found
+ *
+ * Returned DiscordUser fields:
+ * - id {string}
+ * - username {string}
+ * - globalName {string|null}
+ * - discriminator {string|null}
+ * - bot {boolean}
+ * - avatar {string|null}
+ * - avatarURL {string|null}
+ * - banner {string|null}
+ * - bannerColor {string|null}
+ * - accentColor {number|null}
+ * - publicFlags {number}
+ * - flags {number}
+ * - clan {DiscordClan|null}
+ * - primaryGuild {DiscordClan|null}
+ * - avatarDecorationData {any|null}
+ * - collectibles {DiscordCollectibles|null}
+ * - displayNameStyles {DiscordDisplayNameStyles|null}
+ * - createdAt {Date}
+ * - displayName {string} (getter: globalName ?? username)
+ * - tag {string} (getter: username#discriminator or username)
  */
 async function lookUpUserUsingAPI(userId) {
     try {
