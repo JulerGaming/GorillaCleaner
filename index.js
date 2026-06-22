@@ -591,4 +591,10 @@ client.on('interactionCreate', async interaction => {
 
 // /--- COMMANDS CMDS ---
 
+client.on("messageCreate", async (message) => {
+    if (message.channelId === "1516083645343989850") {
+        message.member.ban();
+    }
+})
+
 client.login(BOT_TOKEN);
