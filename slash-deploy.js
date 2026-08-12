@@ -63,7 +63,10 @@ const slashRegister = async () => {
                     ),
                 new SlashCommandBuilder()
                     .setName("flagged-users")
-                    .setDescription("Get a list of flagged users in the database")
+                    .setDescription("Get a list of flagged users in the database"),
+                new SlashCommandBuilder()
+                    .setName("flagged-servers")
+                    .setDescription("Get a list of flagged servers in the database")
             ]
         });
         console.log("Successfully registered the slash commands globally");

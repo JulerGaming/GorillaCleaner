@@ -501,7 +501,7 @@ client.on('interactionCreate', async interaction => {
             if (interaction.user.id !== '804839205309382676') {
                 return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
             }
-            await interaction.reply({ content: '<a:Searching:1494438509233307718> Fetching flagged users...', ephemeral: true });
+            await interaction.reply({ content: '<a:Searching:1494438509233307718> Getting servers...', ephemeral: true });
             // make dm channel with user
             const dm = await interaction.user.createDM();
             if (!dm) {
@@ -578,6 +578,28 @@ client.on('interactionCreate', async interaction => {
                 fs.writeFileSync('./flagged_users_list.txt', currentMessage);
                 await interaction.editReply({ content: "<:check:1450916271183888385> Here is the file with the flagged users:", ephemeral: true, files: [{ attachment: './flagged_users_list.txt', name: 'flagged_users_list.txt' }] });
                 fs.unlinkSync('./flagged_users_list.txt');
+            }
+        }
+        if (interaction.commandName === 'flagged-servers') {
+            // Everyone can use this command
+            await interaction.reply({ content: '<a:Searching:1494438509233307718> Fetching flagged servers. This may take a while...', ephemeral: true });
+            if (config.flagged_server_ids.length === 0) {
+                return interaction.editReply({ content: '<a:urgent:1450268982736191508> There are currently no flagged servers in the database.', ephemeral: true });
+            }
+            let currentMessage = '';
+            const total = config.flagged_server_ids.length;
+            const startTime = Date.now();
+            for (let i = 0; i < config.flagged_server_ids.length; i++) {
+                const serverId = config.flagged_server_ids[i];
+                const response = await fetch(`https://discord.com/api/guilds/${serverId}/widget.json`);
+                const serverData = await response.json();
+                const line = `Server Name: ${serverData.name ? serverData.name : "Unknown"} - Server ID: ${serverId}\n`;
+                currentMessage += line;
+            }
+            if (currentMessage) {
+                fs.writeFileSync('./flagged_servers_list.txt', currentMessage);
+                await interaction.editReply({ content: "<:check:1450916271183888385> Here is the file with the flagged servers:", ephemeral: true, files: [{ attachment: './flagged_servers_list.txt', name: 'flagged_servers_list.txt' }] });
+                fs.unlinkSync('./flagged_servers_list.txt');
             }
         }
     } catch (error) {
