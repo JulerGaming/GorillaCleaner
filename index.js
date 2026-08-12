@@ -593,6 +593,16 @@ client.on('interactionCreate', async interaction => {
                 const serverId = config.flagged_server_ids[i];
                 const response = await fetch(`https://discord.com/api/guilds/${serverId}/widget.json`);
                 const serverData = await response.json();
+                if (serverData.code == 10004) {
+                    const line = `Server with ID ${serverId} has been banned or deleted\n`;
+                    currentMessage += line;
+                    return;
+                }
+                if (serverData.code == 50004) {
+                    const line = `Server with ID ${serverId} has the server widget disabled\n`;
+                    currentMessage += line;
+                    return;
+                }
                 const line = `Server Name: ${serverData.name ? serverData.name : "Unknown"} - Server ID: ${serverId}\n`;
                 currentMessage += line;
             }
