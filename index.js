@@ -596,12 +596,12 @@ client.on('interactionCreate', async interaction => {
                 if (serverData.code == 10004) {
                     const line = `Server with ID ${serverId} has been banned or deleted\n`;
                     currentMessage += line;
-                    return;
+                    continue;
                 }
                 if (serverData.code == 50004) {
                     const line = `Server with ID ${serverId} has the server widget disabled\n`;
                     currentMessage += line;
-                    return;
+                    continue;
                 }
                 const line = `Server Name: ${serverData.name ? serverData.name : "Unknown"} - Server ID: ${serverId}\n`;
                 currentMessage += line;
