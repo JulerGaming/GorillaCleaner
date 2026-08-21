@@ -398,7 +398,7 @@ async function fetchFlaggedMembersAndBan(interaction = null) {
                                 console.log(`Sent DM to banned user ${member.displayName}`);
                             } catch (e) { }
                         }
-                        await member.ban('Server Tag is blacklisted');
+                        await member.ban({ reason: 'Server Tag is blacklisted' });
                         const owner = await guild.fetchOwner();
                         const ownerdm = owner.createDM().catch(() => null);
                         try {
